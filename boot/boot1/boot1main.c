@@ -38,10 +38,30 @@ boot1main (mbr_t * mbr, bios_smap_t *smap)
      *  YOUR CODE HERE
      *  Functions parse_e820(), load_kernel(), and exec_kernel() are provided.
      *  Utilize them to implement the functionality of boot1main described above.
+
      */
+
+	int i;
+	uint32_t bootable_lba=0;
+
+	for(i=0;1<4;i++)
+	{
+		if(mbr->partition[i].bootable == BOOTABLE_PARTITION)
+		{
+			bootable_lba = mbr->partition[i].first_lba;
+			break;		
+		}
+	}	
+
+
+
     parse_e820(smap);
-
-
+	uint32_t entry = load_kernel(bootable_lba);
+	
+	putline("load kernel");
+	putline("start kernel");
+	
+	exec_kernel(entry,&mboot_info);
 
     /* exec_kernel should never return */
     panic ("Fail to load kernel.");

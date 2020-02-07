@@ -21,7 +21,7 @@
     /* Definitions you will use in your code below. */
     .set PROT_MODE_CSEG, 0x8     # GDT code segment selector
     .set PROT_MODE_DSEG, 0x10    # GDT data segment selector
-
+ 
     /* Definition used in provided code below. */
     .set SMAP_SIG, 0x0534D4150
 
@@ -41,6 +41,10 @@
 
     /* TODO: PRINT STARTUP MESSAGE HERE */
 
+//setting video mode 
+	movw $STARTUP_MSG, %si
+	call printstr
+
     /* enable A20
      * This is done because of a quirk in the x86 architecture.
      * See http://wiki.osdev.org/A20 for more information.
@@ -57,6 +61,8 @@ seta20.2:
     jnz    seta20.2
     movb    $0xdf, %al
     outb    %al, $0x60
+
+
 
     /*
      * detect the physical memory map
@@ -94,6 +100,8 @@ e820.fail:
     /***************************************************************************
      * TODO: PRINT FAILURE MESSAGE HERE
      **************************************************************************/
+    movw $E820_FAIL_MSG, %si
+    call printstr		
     jmp    spin16
 
 spin16:
@@ -104,21 +112,61 @@ switch_prot:
     *TODO: SETUP JUMP TO PROTECTED MODE
     ***************************************************************************/
 
+	lgdt gdtdesc
+	movl	%cr0, %ecx
+	orl $0x1, %ecx	//enable flag
+	movl %ecx, %cr0
+	ljmp $PROT_MODE_CSEG, $startseg
+	
+
     /* assemble the following instructions in 32-bit mode */
     .code32
     /* We are now in protected mode! */
 
     /***************************************************************************
     * YOUR 32-bit mode code here
+
     ***************************************************************************/
+startseg:
+	movw $PROT_MODE_DSEG, %ax
+	movw %ax, %ds
+	movw %ax, %es
+	movw %ax, %fs
+	movw %ax, %gs
+	movw %ax, %ss
+
+//jump to C start
+
+	pushl $smap
+	pushl $0x7c00
+	call  boot1main
 
     /* It shall never reach here! */
 spin:
     hlt
 
+ 
+
 /*******************************************************************************
 *   DATA STRUCTURES
 *******************************************************************************/
+
+// printmethod
+
+printstr:
+	movb	$14,%ah
+
+printstr.1:
+	lodsb
+	cmp $0x00,%al
+	je printstr.2
+	int $0x10
+	jmp printstr.1
+
+printstr.2:
+	ret
+
+
 
 STARTUP_MSG:
     .ascii    "Start boot1 ...\r\n\0"
