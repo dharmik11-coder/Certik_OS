@@ -46,4 +46,9 @@ $ git push -f origin v0
 
 
 ## Anything we should know???
-INSERT HERE
+Compile steps : 
+$./run.sh
+
+create output :
+$ qemu-system-i386 -smp 1 -hda project0.img -serial mon:stdio -m 512 -k en-us
+
