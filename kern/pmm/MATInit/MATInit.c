@@ -1,3 +1,4 @@
+
 #include <lib/debug.h>
 #include <dev/mboot.h>
 #include "import.h"
@@ -12,18 +13,34 @@
 void
 pmem_init(pmmap_list_type *pmmap_list_p)
 {
-  /**
-    * This variable should contain the highest available physical page number.
-    * You need to calculate this value from the information in the pmmap list,
-    * and save it to the nps variable before calling set_nps() function.
-    */
-  unsigned int nps;
+    // : Define your local variables here.
+    unsigned int nps;
 
+    int row_count = get_size();
 
+    nps = 0 ; 
+    for( int i = 0;i < row_count;i++){
+        if(nps < (get_mms(pmmap_list_p, i) + get_mml(pmmap_list_p, i))){
+        nps = get_mms(pmmap_list_p, i) + get_mml(pmmap_list_p, i); 
+        } 
+	
+    }
 
+    if(nps % PAGESIZE == 0){
+    nps = nps / PAGESIZE;
+    }
+    else{
+    nps = nps / PAGESIZE + 1;
+    }
 
-  /* you need to make this call at some point */
-  set_nps(nps);
+    set_nps(nps); // Setting the value computed above to NUM_PAGES.
+
+    // Reserved by the kernel
+    for(int i = 0; i < VM_USERLO_PI; i++){
+    set_accessibility(i, 1);
+    }
+    //set all default permission to 0
+    for(int i = VM_USERLO_PI; i < VM_USERHI_PI; i++){
+    set_accessibility(i, 0);
+    }
 }
-
-

@@ -37,6 +37,7 @@ void container_init(unsigned int mbi_addr)
 {
   unsigned int real_quota;
   real_quota = 0;
+  pmem_init(mbi_addr);
 
   /** TASK 1:
     * * Compute the available quota and store it into the variable real_quota.
@@ -45,6 +46,12 @@ void container_init(unsigned int mbi_addr)
     *    in the physical memory data-structure you implemented.
     */
   //TODO
+  unsigned int nps = get_nps();
+  for(int i = 0;i < nps; i++){
+    if(is_accessible(i) && !is_allocated(i)){
+      real_quota++; 
+    }
+  }
 
   KERN_DEBUG("\nreal quota: %d\n\n", real_quota);
 
@@ -63,7 +70,7 @@ void container_init(unsigned int mbi_addr)
 unsigned int container_get_parent(unsigned int id)
 {
   // TODO
-  return 0;
+  return CONTAINER[id].parent;
 }
 
 
@@ -73,7 +80,7 @@ unsigned int container_get_parent(unsigned int id)
 unsigned int container_get_nchildren(unsigned int id)
 {
   // TODO
-  return 0;
+  return CONTAINER[id].nchildren;
 }
 
 
@@ -83,7 +90,7 @@ unsigned int container_get_nchildren(unsigned int id)
 unsigned int container_get_quota(unsigned int id)
 {
   // TODO
-  return 0;
+  return CONTAINER[id].quota;
 }
 
 
@@ -93,7 +100,7 @@ unsigned int container_get_quota(unsigned int id)
 unsigned int container_get_usage(unsigned int id)
 {
   // TODO
-  return 0;
+  return CONTAINER[id].usage;
 }
 
 
@@ -105,7 +112,7 @@ unsigned int container_get_usage(unsigned int id)
 unsigned int container_can_consume(unsigned int id, unsigned int n)
 {
   // TODO
-  return 0;
+  return CONTAINER[id].quota - CONTAINER[id].usage >= n;
 }
 
 /**
@@ -130,7 +137,15 @@ unsigned int container_split(unsigned int id, unsigned int quota)
     *         (available at the top of this page and handout)
     */
   //TODO
+  CONTAINER[id].nchildren++;
+  CONTAINER[id].usage += quota;
 
+  //update child
+  CONTAINER[child].quota = quota;
+  CONTAINER[child].usage = 0;
+  CONTAINER[child].parent = id;
+  CONTAINER[child].nchildren = 0;
+  CONTAINER[child].used = 1;
 
   return child;
 }
@@ -147,7 +162,13 @@ unsigned int container_alloc(unsigned int id)
    * TODO: implement the function here.
    */
 
-  return 0;
+  unsigned int pid; //page id
+
+  pid = palloc();
+  if(pid == 0) return 0; 
+
+  CONTAINER[id].usage++;
+  return pid;
 }
 
 /** TASK 9:
@@ -159,4 +180,6 @@ unsigned int container_alloc(unsigned int id)
 void container_free(unsigned int id, unsigned int page_index)
 {
   // TODO
+  pfree(page_index);
+  CONTAINER[id].usage--;
 }
