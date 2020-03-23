@@ -8,6 +8,14 @@
 #define DIR_SHIFT   22
 #define PAGE_SHIFT  12
 
+#define VM_USERLO  0x40000000
+#define VM_USERHI  0xF0000000
+
+#define PT_PERM_PWG (PTE_P | PTE_W | PTE_G)
+#define PT_PERM_PW (PTE_P | PTE_W)
+
+
+
 /** ASSIGNMENT INFO:
   * - Here we perform the virtual address translation based on 2 level paging.
   * - Remember that a 32-bit virtual address is divided into directory, page and offset fields.
@@ -28,6 +36,16 @@
 unsigned int get_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
+    int pageDirectoryIndex = (DIR_MASK & vaddr)>>22;
+  int pageTableIndex = (PAGE_MASK & vaddr)>>12;
+
+
+
+  int pdir = get_pdir_entry(proc_index, pageDirectoryIndex);
+
+  
+  return (int)pdir;
+
     return 0;
 }
 
@@ -40,7 +58,19 @@ unsigned int get_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
-    return 0;
+    int pageDirectoryIndex =( DIR_MASK & vaddr)>>22;
+  int pageTableIndex = (PAGE_MASK & vaddr)>>12;
+  int offset = (OFFSET_MASK & vaddr);
+
+  int pdir = get_pdir_entry(proc_index, pageDirectoryIndex);
+  int ptbl = get_ptbl_entry(proc_index, pageDirectoryIndex, pageTableIndex);
+
+  if(ptbl != 0  && pdir != 0){
+    
+     return ptbl;
+  }
+
+  return 0;
 }         
 
 /** TASK 3:
@@ -51,6 +81,16 @@ unsigned int get_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 void rmv_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
+    unsigned int pde_index = (vaddr & DIR_MASK) >> 22;
+    unsigned int pte_index = (vaddr & PAGE_MASK) >> 12;
+
+    unsigned int pde = get_pdir_entry(proc_index, pde_index);
+    // check the present bit of page directory entry
+    if ((pde & PTE_P) == 0) {
+    // the page directory entry is not valid for address translation
+        return;
+    }
+    rmv_ptbl_entry(proc_index, pde_index, pte_index);
 }
 
 /** TASK 4:
@@ -60,6 +100,8 @@ void rmv_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 void rmv_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 {
     // TODO
+    unsigned int pde_index = (vaddr & DIR_MASK) >> 22;
+    rmv_pdir_entry(proc_index, pde_index);
 }
 
 /** TASK 5:
@@ -69,6 +111,9 @@ void rmv_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr)
 void set_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr, unsigned int page_index)
 {
     // TODO
+    unsigned int pde_index = (vaddr & DIR_MASK) >> 22;
+    set_pdir_entry(proc_index, pde_index, page_index);
+
 }   
 
 /** TASK 6:
@@ -79,6 +124,10 @@ void set_pdir_entry_by_va(unsigned int proc_index, unsigned int vaddr, unsigned 
 void set_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr, unsigned int page_index, unsigned int perm)
 {
     // TODO
+    unsigned int pde_index = (vaddr & DIR_MASK) >> 22;
+    unsigned int pte_index = (vaddr & PAGE_MASK) >> 12;
+    set_ptbl_entry(proc_index, pde_index, pte_index, page_index, perm);
+    
 }
 
 /** TASK 7:
@@ -92,8 +141,23 @@ void set_ptbl_entry_by_va(unsigned int proc_index, unsigned int vaddr, unsigned 
   *         Calculate the appropriate permission values as mentioned above 
   *         and call set_ptbl_entry_identity from MATIntro layer.
   */
-void idptbl_init(void)
-{
+	
+	void idptbl_init(void)
+	{
+
     // TODO
+  
+	  unsigned int addr;
+   	 for (addr = 0; addr < 0xFFFFF000; addr += PAGESIZE) {
+         unsigned int pde_index = (addr & DIR_MASK) >> 22;
+         unsigned int pte_index = (addr & PAGE_MASK) >> 12;
+         if (addr < VM_USERLO || addr >= VM_USERHI) {
+            
+            set_ptbl_entry_identity(pde_index, pte_index, PT_PERM_PWG);		///kernel pages
+        }else {
+            
+            set_ptbl_entry_identity(pde_index, pte_index, PT_PERM_PW); 		//non kernel pages
+        }
+    }
 
 }

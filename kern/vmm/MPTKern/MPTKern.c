@@ -32,6 +32,10 @@ void pdir_init_kern(void)
     idptbl_init();
     
     //TODO
+    
+	for (unsigned int pdindex = 0; pdindex < 1024; pdindex++) {
+        set_pdir_entry_identity(0, pdindex);
+    }
 }
 
 /** TASK 2:
@@ -47,10 +51,21 @@ void pdir_init_kern(void)
   * Hint 3: If you have a valid pde, set the page table entry to new physical page (page_index) and perm.
   * Hint 4: Return the pde index or MagicNumber.
   */
-unsigned int map_page(unsigned int proc_index, unsigned int vadr, unsigned int page_index, unsigned int perm)
+unsigned int map_page(unsigned int proindex, unsigned int vadr, unsigned int page_index, unsigned int perm)
 {   
-  // TODO
-  return 0;
+	  // TODO
+	 
+	  unsigned int pde = get_pdir_entry_by_va(proindex, vadr);
+	  unsigned int ptbl;
+	  if ((pde & PTE_P) == 0) {
+	    ptbl = alloc_ptbl(proindex, vadr);
+	    if (ptbl == 0) {
+	      return MagicNumber;
+	    }
+	  }
+	  set_ptbl_entry_by_va(proindex, vadr, page_index, perm);
+	  pde = get_pdir_entry_by_va(proindex, vadr);
+	  return pde >> 12;
 }
 
 /** TASK 3:
@@ -61,8 +76,15 @@ unsigned int map_page(unsigned int proc_index, unsigned int vadr, unsigned int p
   * Hint 2: If pte is valid, remove page table entry for vadr.
   * Hint 3: Return the corresponding page table entry.
   */
-unsigned int unmap_page(unsigned int proc_index, unsigned int vadr)
+
+unsigned int unmap_page(unsigned int proindex, unsigned int vadr)
 {
-  // TODO
-  return 0;
+	  // TODO
+	  unsigned int pte = get_ptbl_entry_by_va(proindex, vadr);
+	  if ((pte & PTE_P) == 0) {
+	    return pte;
+	  }
+	  rmv_ptbl_entry_by_va(proindex, vadr);
+	  pte = get_ptbl_entry_by_va(proindex, vadr);
+	  return pte;
 }   

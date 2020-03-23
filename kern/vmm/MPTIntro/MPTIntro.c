@@ -7,6 +7,7 @@
 #define PT_PERM_UP 0
 #define PT_PERM_PTU (PTE_P | PTE_W | PTE_U)
 
+
 /** ASSIGNMENT INFO:
   * - In this part of the kernel, we will be implementing Virtual Memory Management (VMM) with
   *   two level paging mechanism.
@@ -51,6 +52,7 @@ unsigned int IDPTbl[1024][1024] gcc_aligned(PAGESIZE);
 void set_pdir_base(unsigned int index)
 {
     // TODO
+  set_cr3(PDirPool[index]);
 }
 
 /** TASK 2:
@@ -60,7 +62,7 @@ void set_pdir_base(unsigned int index)
 unsigned int get_pdir_entry(unsigned int proc_index, unsigned int pde_index)
 {
     // TODO
-    return 0;
+    return (unsigned int)PDirPool[proc_index][pde_index];
 }
 
 /** TASK 3:
@@ -71,6 +73,8 @@ unsigned int get_pdir_entry(unsigned int proc_index, unsigned int pde_index)
 void set_pdir_entry(unsigned int proc_index, unsigned int pde_index, unsigned int page_index)
 {
     // TODO
+    unsigned int value = (page_index << 12) | PT_PERM_PTU; 
+    PDirPool[proc_index][pde_index] = (char *)value;
 }
 
 /** TASK 4:
@@ -83,6 +87,10 @@ void set_pdir_entry(unsigned int proc_index, unsigned int pde_index, unsigned in
 void set_pdir_entry_identity(unsigned int proc_index, unsigned int pde_index)
 {
     // TODO
+    
+    unsigned int value = (unsigned int)IDPTbl[pde_index];
+    value |= PT_PERM_PTU;
+    PDirPool[proc_index][pde_index] = (char *)value;
 }
 
 /** TASK 5:
@@ -93,6 +101,7 @@ void set_pdir_entry_identity(unsigned int proc_index, unsigned int pde_index)
 void rmv_pdir_entry(unsigned int proc_index, unsigned int pde_index)
 {
     // TODO
+    PDirPool[proc_index][pde_index] = (char *)0x00000000;
 }
 
 /** TASK 6:
@@ -107,7 +116,12 @@ void rmv_pdir_entry(unsigned int proc_index, unsigned int pde_index)
 unsigned int get_ptbl_entry(unsigned int proc_index, unsigned int pde_index, unsigned int pte_index)
 {
     // TODO
+    
     return 0;
+    unsigned int pte_addr = (unsigned int )PDirPool[proc_index][pde_index];
+    pte_addr &= 0xfffff000; 						//removing perm bits
+    pte_addr += pte_index << 2;//
+    return *(unsigned int *)pte_addr; 
 }
 
 /** TASK 7:
@@ -117,7 +131,17 @@ unsigned int get_ptbl_entry(unsigned int proc_index, unsigned int pde_index, uns
   */
 void set_ptbl_entry(unsigned int proc_index, unsigned int pde_index, unsigned int pte_index, unsigned int page_index, unsigned int perm)
 {
-    // TODO
+    // TODO 
+   
+    unsigned int* pte;
+    unsigned int pte_addr =  (unsigned int )PDirPool[proc_index][pde_index];
+    pte_addr &= 0xfffff000;						//removing perm bits
+    pte_addr += pte_index << 2;
+    pte = (unsigned int *)pte_addr;
+    *pte &= 0x00000000;
+    *pte = page_index << 12;
+    *pte |= (perm & 0x00000fff);
+
 }
 
 /** TASK 8:
@@ -140,14 +164,24 @@ void set_ptbl_entry(unsigned int proc_index, unsigned int pde_index, unsigned in
 void set_ptbl_entry_identity(unsigned int pde_index, unsigned int pte_index, unsigned int perm)
 {
     // TODO
+    IDPTbl[pde_index][pte_index] = ((pde_index << 10) + pte_index) << 12;
+    IDPTbl[pde_index][pte_index] |= perm;
 }
+
 
 /** TASK 9:
   * * Set the specified page table entry to 0
   * Hint 1: Remember that page directory entries also have permissions stored. Mask them out.
   * Hint 2: Remember to cast to a pointer before de-referencing an address.
   */
+
 void rmv_ptbl_entry(unsigned int proc_index, unsigned int pde_index, unsigned int pte_index)
 {
     // TODO
+    unsigned int * pte;
+    unsigned int pte_addr = (unsigned int)PDirPool[proc_index][pde_index];
+    pte_addr &= 0xfffff000;								//removing perm bits
+    pte_addr += pte_index << 2;
+    pte = (unsigned int *)pte_addr;
+    *pte &= 0x00000000;
 }

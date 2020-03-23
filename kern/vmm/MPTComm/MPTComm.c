@@ -11,10 +11,23 @@
   *    In the case when there's no physical page available, it returns 0.
   */
 unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vadr)
-{
-  // TODO
-  return 0;
-}
+	{
+	  // TODO
+	  unsigned int addr;
+	  unsigned int page_index;
+	  page_index = container_alloc(proc_index);
+	  if(page_index == 0) return 0;//physical page not vailable
+	  
+	  // register it in page table directory
+	  set_pdir_entry_by_va(proc_index, vadr, page_index);
+	  
+	  // clear the whole page table entry and addr increases 4 per step, since entry is 4 bytes
+	  for(addr = page_index << 12; addr < (page_index + 1) << 12; addr += 4){
+	    *(unsigned int *)addr &= 0x00000000; 
+	  }
+	  return page_index;
+	  
+	}
 
 /** TASK 2:
   * * Reverse operation of alloc_ptbl.
@@ -27,4 +40,13 @@ unsigned int alloc_ptbl(unsigned int proc_index, unsigned int vadr)
 void free_ptbl(unsigned int proc_index, unsigned int vadr)
 {
   // TODO
+  unsigned int pdir_entry;
+  unsigned int page_index;
+  pdir_entry = get_pdir_entry_by_va(proc_index, vadr);
+  page_index = pdir_entry >> 12;
+  // remove page directory entry
+  rmv_pdir_entry_by_va(proc_index, vadr);
+
+  //free the page for the page table entities
+  container_free(proc_index, page_index);
 }
