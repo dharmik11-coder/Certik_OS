@@ -6,11 +6,13 @@
 
 #include "mboot.h"
 
-
 static int pmmap_slots_next_free = 0;
 static struct pmmap pmmap_slots[128];
-//static SLIST_HEAD(, pmmap) pmmap_list;	/* all memory regions */
+// static SLIST_HEAD(, pmmap) pmmap_list;	/* all memory regions */
 static SLIST_HEAD(, pmmap) pmmap_sublist[4];
+
+// Code change
+static int pmmap_nentries = 0;
 
 enum __pmmap_type { PMMAP_USABLE, PMMAP_RESV, PMMAP_ACPI, PMMAP_NVS };
 
@@ -19,6 +21,7 @@ enum __pmmap_type { PMMAP_USABLE, PMMAP_RESV, PMMAP_ACPI, PMMAP_NVS };
 	 ((type) == MEM_RESERVED) ? PMMAP_RESV :	\
 	 ((type) == MEM_ACPI) ? PMMAP_ACPI :		\
 	 ((type) == MEM_NVS) ? PMMAP_NVS : -1)
+
 
 struct pmmap *
 pmmap_alloc_slot(void)
@@ -191,8 +194,78 @@ set_cr3(char **pdir)
   *
   * Hint: bit masks are defined in x86.h file.
   */
+int
+get_size(void)
+{
+	return pmmap_nentries;
+}
+
+uint32_t
+get_mms(pmmap_list_type *pmmap_list_p, int idx)
+{
+	int i = 0;
+	struct pmmap *slot = NULL;
+
+	SLIST_FOREACH(slot, pmmap_list_p, next) {
+		if (i == idx)
+			break;
+		i++;
+	}
+
+	if (slot == NULL || i == pmmap_nentries)
+		return 0;
+
+	return slot->start;
+}
+
+uint32_t
+get_mml(pmmap_list_type *pmmap_list_p, int idx)
+{
+	int i = 0;
+	struct pmmap *slot = NULL;
+
+	SLIST_FOREACH(slot, pmmap_list_p, next) {
+		if (i == idx)
+			break;
+		i++;
+	}
+
+	if (slot == NULL || i == pmmap_nentries)
+		return 0;
+
+	return slot->end - slot->start;
+}
+
+int
+is_usable(pmmap_list_type *pmmap_list_p, int idx)
+{
+	int i = 0;
+	struct pmmap *slot = NULL;
+
+	SLIST_FOREACH(slot, pmmap_list_p, next) {
+		if (i == idx)
+			break;
+		i++;
+	}
+
+	if (slot == NULL || i == pmmap_nentries)
+		return 0;
+
+	return slot->type == MEM_RAM;
+}
+
 void
 enable_paging(void)
 {
     //TODO
+    uint32_t cr4 = rcr4();
+	cr4 |= CR4_PGE;
+	lcr4(cr4);
+
+
+	/* turn on paging */
+	uint32_t cr0 = rcr0();
+	cr0 |= CR0_PE | CR0_PG | CR0_AM | CR0_WP | CR0_NE | CR0_MP;
+	cr0 &= ~(CR0_EM | CR0_TS);
+	lcr0(cr0);
 }
