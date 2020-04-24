@@ -46,4 +46,12 @@ $ git push -f origin v2
 
 
 ## Anything we should know???
-INSERT HERE
+to execute follow steps as below :
+1 > make clean
+2 > make TEST=1 SOL=1
+3 > exit
+
+4 > make clean
+5 > make SOL=1
+6 > make qemu
+7 > input "startuser" in qemu
