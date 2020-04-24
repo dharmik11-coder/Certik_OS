@@ -1,3 +1,4 @@
+
 #include <lib/debug.h>
 #include <lib/types.h>
 #include <lib/x86.h>
@@ -86,8 +87,39 @@ extern uint8_t _binary___obj_user_pingpong_ding_start[];
 void sys_spawn(void)
 {
   // TODO
-}
+  int curid;
+  int elf_id, quota;
+  int pid;
+  void * elf_addr;
+  curid = get_curid();
+  elf_id = syscall_get_arg2(); 
+  if(elf_id > 3 || elf_id < 1){
+    
+    syscall_set_errno(E_INVAL_PID);
+    syscall_set_retval1(NUM_IDS);
+    return ;
+  }
+  else if(elf_id == 1){
+    elf_addr = (void *)_binary___obj_user_pingpong_ping_start;
+  }
+  else if(elf_id == 2){
+    elf_addr = (void *)_binary___obj_user_pingpong_pong_start;
+  }
+  else if(elf_id == 3){
+    elf_addr = (void *)_binary___obj_user_pingpong_ding_start;
+  }
+else{
 
+}
+quota = syscall_get_arg3(); 
+  pid = proc_create(elf_addr, quota);
+  if(pid == NUM_IDS){
+    syscall_set_errno(E_MEM);
+  }else{
+    syscall_set_errno(E_SUCC);
+  }
+  syscall_set_retval1(pid); 
+}
 /** TASK 2:
   * * Yield to another thread/process.
   *   The user level library function sys_yield (defined in user/include/syscall.h)
@@ -101,4 +133,6 @@ void sys_spawn(void)
 void sys_yield(void)
 {
   // TODO
+  thread_yield();
+  syscall_set_errno(E_SUCC);
 }

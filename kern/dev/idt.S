@@ -134,3 +134,9 @@ _alltraps:
 .p2align 4, 0x90		/* 16-byte alignment, nop filled */
 trap_return:
 	/* TODO */
+	movl	4(%esp),%esp	
+	popal			
+	popl	%es		
+	popl	%ds
+	addl	$8,%esp		
+	iret	

@@ -42,7 +42,20 @@ static gcc_inline pid_t
 sys_spawn(uintptr_t exec, unsigned int quota)
 {
 	// TODO
-	return -1;
+	int ernum;
+  	
+pid_t pid;
+
+  asm volatile("int %2"
+         : "=a" (ernum),
+           "=b" (pid)
+         : "i" (T_SYSCALL),
+           "a" (SYS_spawn),
+           "b" (exec),
+           "c" (quota)
+         : "cc", "memory");
+
+  return ernum ? -1 : pid;
 }
 
 /** TASK 2:
@@ -54,6 +67,10 @@ static gcc_inline void
 sys_yield(void)
 {
 	// TODO
+asm volatile("int %0" :
+         : "i" (T_SYSCALL),
+           "a" (SYS_yield)
+         : "cc", "memory");
 }
 
 #endif

@@ -12,4 +12,10 @@
 void tcb_init(void)
 {
   // TODO
+int t_id = 0;
+   
+		do {
+			tcb_init_at_id(t_id);
+			t_id++;
+		   } while (t_id < NUM_IDS);
 }

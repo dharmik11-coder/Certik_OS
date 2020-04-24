@@ -15,6 +15,12 @@ void tqueue_init(void)
 	tcb_init();
 
   // TODO
+    int t_id=0;
+    
+do{
+    tqueue_init_at_id(t_id);
+    t_id++;
+  }while(t_id <= NUM_IDS);
 }
 
 /** TASK 2:
@@ -39,6 +45,18 @@ void tqueue_init(void)
 void tqueue_enqueue(unsigned int chid, unsigned int pid)
 {
   // TODO
+// remove pid from TCB list
+   int t_pid;
+        t_pid = tqueue_get_tail(chid);
+  if(t_pid != NUM_IDS){
+    tcb_set_next(t_pid, pid);
+  }
+  else{
+    tqueue_set_head(chid, pid);
+  }
+
+        tcb_set_prev(pid, t_pid); 
+  tqueue_set_tail(chid, pid);
 }
 
 /** TASK 3:
@@ -58,7 +76,21 @@ void tqueue_enqueue(unsigned int chid, unsigned int pid)
 unsigned int tqueue_dequeue(unsigned int chid)
 {
   // TODO
-  return 0;
+   int hd_id, hnxt_id;
+  hd_id = tqueue_get_head(chid);
+  if(hd_id == NUM_IDS) return NUM_IDS;
+  
+  hnxt_id = tcb_get_next(hd_id);
+  if(hnxt_id != NUM_IDS){
+    
+    tcb_set_prev(hnxt_id, NUM_IDS);
+  }
+  else{
+    tqueue_set_tail(chid, NUM_IDS);
+  }
+  tcb_set_next(hd_id, NUM_IDS);
+  tqueue_set_head(chid, hnxt_id);
+  return hd_id;
 }
 
 /** TASK 4:
@@ -76,4 +108,29 @@ unsigned int tqueue_dequeue(unsigned int chid)
 void tqueue_remove(unsigned int chid, unsigned int pid)
 {
   // TODO
+  int hd_pid, tl_pid,pv_pid, nx_pid;
+
+  hd_pid = tqueue_get_head(chid);
+  tl_pid = tqueue_get_tail(chid);
+  pv_pid = tcb_get_prev(pid);
+  nx_pid = tcb_get_next(pid);
+  if(hd_pid == pid){
+ 
+    tqueue_set_head(chid, nx_pid);
+  }
+  if(tl_pid == pid){
+    //deleting tail
+    tqueue_set_tail(chid, pv_pid);
+  }
+  if(nx_pid != NUM_IDS){
+    
+    tcb_set_prev(nx_pid, pv_pid);
+  }
+  if(pv_pid != NUM_IDS){
+    
+    tcb_set_next(pv_pid, nx_pid);
+  }
+  
+  tcb_set_next(pid, NUM_IDS);
+  tcb_set_prev(pid, NUM_IDS);
 }

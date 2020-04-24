@@ -25,6 +25,11 @@ extern tf_t uctx_pool[NUM_IDS];
 void proc_start_user(void)
 {
 	// TODO
+ int c_pid = get_curid();
+  tss_switch(c_pid);
+  set_pdir_base(c_pid);
+
+  trap_return((void *) &uctx_pool[c_pid]);
 }
 
 /** 
